@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <title>Теорія прийняття рішень</title>
+</head>
+
+<body>
+
+    <div class="container mt-5">
+        <h2>Калькулятор</h2>
+        <form>
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label for="rows">Кількість варіантів:</label>
+                    <input type="number" class="form-control" id="rows" placeholder="Enter number of rows">
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="cols">Ймовірні наслідки:</label>
+                    <input type="number" class="form-control" id="cols" placeholder="Enter number of columns">
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="determined">Визначена ситуація:</label>
+                    <input type="checkbox" class="form-control" id="determined" placeholder="Enter number of columns">
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="generateMatrix()">Накреслити таблицю</button>
+        </form>
+        <form>
+            
+            <div id="matrixContainer" class="mt-4"></div>
+            <button type="button" class="btn btn-primary" onclick="processMatrix()" >Обрахувати</button>
+        </form>
+    </div>
+
+    <script>
+        function generateMatrix() {
+            // Get the values of rows and columns
+            let rows = document.getElementById('rows').value;
+            let cols = document.getElementById('cols').value;
+            let detrmined = document.getElementById('determined').checked;
+
+
+
+            // Clear previous matrix
+            document.getElementById('matrixContainer').innerHTML = '';
+
+            // Create a table with input fields based on rows and columns
+            let table = '<table class="table table-bordered">';
+                table += '<thead><tr><td>#</td>';
+                 for (var j = 0; j < cols; j++) {
+                    if(detrmined == false){
+                        table += `<td>y${j+1}</td>`;
+                    }
+                    else{
+                        table += `<td>y${j+1}<input type="text" class="form-control" id ="y${j}" ></td>`;
+                    }
+                    
+                }
+                table += '<td>Оптимальність</td></tr></thead>';
+            for (let i = 0; i < rows; i++) {
+                table += `<tr><td>x${i+1}</td>`;
+                for (let j = 0; j < cols; j++) {
+                    table += `<td><input type="text" class="form-control" id ="x${i}_${j}" ></td>`;
+                }
+                table += `<td id="res${i}""></td>`;
+                table += '</tr>';
+            }
+            table += '</table>';
+
+           
+            document.getElementById('matrixContainer').innerHTML = table;
+
+
+            
+        }
+    </script>
+    <script>
+  function processMatrix() {
+    // Get the values of rows and columns
+    let rows = document.getElementById('rows').value;
+    let cols = document.getElementById('cols').value;
+    let detrmined = document.getElementById('determined').checked;
+    let probabilities = [];
+    let alphaHurvitsa = 0.8;
+    if(detrmined){
+        for (let j = 0; j < cols; j++) {
+            // Get the input field value for each cell
+            let inputValue = document.getElementById(`y${j}`).value;
+            
+            probabilities.push(inputValue);
+            
+        }
+    }
+    else{
+         alphaHurvitsa = Number.parseFloat(prompt("Коєфіцієнт альфа для критерія Гурвіца:","0.8"));
+    }
+
+    // Create a 2D array to store matrix values
+    let matrixValues = [];
+    for (let i = 0; i < rows; i++) {
+      matrixValues[i] = [];
+      for (let j = 0; j < cols; j++) {
+        // Get the input field value for each cell
+        let inputValue = document.getElementById(`x${i}_${j}`).value; 
+        matrixValues[i].push(inputValue);    
+      }
+    }
+
+    // Send the matrix values to the server using fetch API
+    fetch('/process', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ matrixValues, detrmined, probabilities, alphaHurvitsa }),
+    })
+      .then(response => response.json())
+      .then(data => {
+        if(data.error!=""){
+            alert(data.error);
+        }
+        for(let i = 0; i < data.results.length;i++){
+            document.getElementById(`res${i}`).innerHTML = data.results[i].join(", ");
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  }
+</script>
+
+</body>
+
+</html>
