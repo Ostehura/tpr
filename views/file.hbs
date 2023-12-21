@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload Example</title>
+    <!-- Include Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <form id="fileUploadForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="fileInput">Choose File:</label>
+                <input type="file" class="form-control-file" id="fileInput" name="fileInput" />
+            </div>
+            <div class="form-group col-md-4">
+                    <label for="determined">Визначена ситуація:</label>
+                    <input type="checkbox" class="form-control" id="determined" placeholder="Enter number of columns">
+                </div>
+            <button type="button" class="btn btn-primary" onclick="uploadFile()">Upload File</button>
+        </form>
+    </div>
+
+    <div id="matrixContainer" class="mt-4"></div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+    <script>
+        function uploadFile() {
+            var fileInput = document.getElementById('fileInput');
+            var file = fileInput.files[0];
+            var determined = document.getElementById('determined').checked; 
+            let alphaHurvitsa =0;
+            if(!determined){
+                alphaHurvitsa = Number.parseFloat(prompt("Коєфіцієнт альфа для критерія Гурвіца:","0.8"));
+            }
+
+            if (file) {
+                var formData = new FormData();
+                formData.append('file', file);
+                formData.append('detrmined',determined);
+                formData.append('alphaHurvitsa',alphaHurvitsa);
+
+                // Use AJAX to send the file to the server
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', `http://localhost:3000/upload`, true);
+
+                xhr.onload = function () {
+                    if (xhr.status === 201) {
+                       
+                        let resp = JSON.parse(xhr.response);
+                        console.log(resp.matrix);
+                        let table = '<table class="table table-bordered">';
+                        table += '<thead><tr><td>#</td>';
+                        console.log('t');
+                        for (let j = 0; j < resp.matrix[0].length; j++) {
+                            console.log(j);
+                            
+                            table += `<td>y${j+1}</td>`;
+                                           
+                        }
+                        table += '<td>Оптимальність</td></tr></thead>';
+                        for (let i = 0; i < resp.matrix.length; i++) {
+                            console.log(" "+i);
+                            table += `<tr><td>x${i+1}</td>`;
+                            for (let j = 0; j < resp.matrix[i].length; j++) {
+                                console.log("  "+j);
+                                table += `<td>${resp.matrix[i][j]} </td>`;
+                            }
+                            table += `<td>${resp.results[i].join(", ")}</td>`;
+                            table += '</tr>';
+                            }
+                        table += '</table>';
+                        document.getElementById('matrixContainer').innerHTML = table;
+                        if(resp.error!=""){
+                            alert(data.error);
+                        }
+                    
+                    } else {
+                        console.error('Error uploading file');
+                    }
+                };
+
+                xhr.send(formData);
+            } else {
+                console.error('No file selected');
+            }
+        }
+    </script>
+</body>
+</html>
